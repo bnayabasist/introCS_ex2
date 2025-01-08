@@ -12,7 +12,7 @@ public class Ex2Sheet implements Sheet {
         table = new SCell[x][y];
         for(int i=0;i<x;i=i+1) {
             for(int j=0;j<y;j=j+1) {
-                table[i][j] = new SCell("");
+                table[i][j] = new SCell("",Ex2Utils.ABC[j] + i);
             }
         }
         eval();
@@ -57,7 +57,8 @@ public class Ex2Sheet implements Sheet {
     }
     @Override
     public void set(int x, int y, String s) {
-        Cell c = new SCell(s);
+        SCell a = (SCell) table[x][y];
+        Cell c = new SCell(s,a.getName());
         table[x][y] = c;
 
     }
@@ -123,7 +124,7 @@ public class Ex2Sheet implements Sheet {
 
         return ans;
         }
-    public static double evaluateExpression(String expression) {
+    public double evaluateExpression(String expression) {
         // הסרת רווחים מיותרים מהביטוי
         expression = expression.replaceAll(" ", "");
 
@@ -134,6 +135,23 @@ public class Ex2Sheet implements Sheet {
         int i = 0;
         while (i < expression.length()) {
             char current = expression.charAt(i);
+            if (Character.isLetter(current) && (i - 1 > 0 || !Character.isDigit(expression.charAt(i -1)) )){
+                String ops = "*/-+)";
+                int s = i;
+                int j = i;
+                double cell = 0;
+              while (!ops.contains(String.valueOf((expression.charAt(i))))){
+                  j++;
+                  i++;
+
+                }
+              String a = expression.substring(i, j+1);
+              if (isValid(a)){
+                  cell = evaluateExpression(find(a).getData());
+              }
+            }
+
+
 
             // אם זה מספר, נקרא את כולו
             if (Character.isDigit(current) || current == '.') {
@@ -179,7 +197,32 @@ public class Ex2Sheet implements Sheet {
         // הערך האחרון ברשימה הוא התוצאה
         return values.get(0);
     }
+    public boolean isValid(String Val){
+        for (int i= 0; i < this.table.length; i++){
+            for (int j = 0; j < this.table[i].length; j++){
+                SCell a = (SCell) this.table[i][j];
+                if (a.getName().equals(Val)){
+                    return true;
+                }
+            }
 
+        }
+        return false;
+    }
+
+    public Cell find(String s){
+        for (int i = 0; i < this.table.length; i++) {
+            for (int j = 0; j < this.table[i].length; j++) {
+                SCell a = (SCell) this.table[i][j];
+                if(a.getName().equals(s)){
+                    return table[i][j];
+                }
+
+            }
+
+        }
+        return null;
+    }
     // פונקציה שבודקת האם תו הוא אופרטור
     private static boolean isOperator(char c) {
         return c == '+' || c == '-' || c == '*' || c == '/';

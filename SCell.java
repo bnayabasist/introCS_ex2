@@ -4,9 +4,14 @@ package ex2;
 public class SCell implements Cell {
     private String line;
     private int type;
+    private String CellName;
 
-    public SCell(String s) {
+    public SCell(String s, String g) {
         setData(s);
+        this.CellName = g;
+    }
+    public String getName(){
+        return this.CellName;
     }
 
     @Override
