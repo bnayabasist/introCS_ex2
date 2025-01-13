@@ -27,7 +27,9 @@ public class Ex2Sheet implements Sheet {
         // Add your code here
 
         Cell c = get(x,y);
-        if(c!=null) {ans = eval(x,y);}
+        if(c!=null) {ans = eval(x,y);
+            System.out.println(c.getType());
+        }
 
         /////////////////////
         return ans;
@@ -41,11 +43,34 @@ public class Ex2Sheet implements Sheet {
     @Override
     public Cell get(String cords) {
         Cell ans = null;
-        // Add your code here
+         //Add your code here
+//        if (cords == null || cords.isEmpty()) {
+//            throw new IllegalArgumentException("Invalid cell reference: " + cords);
+//        }
+//
+//        // הפרדת האותיות (עמודה) והמספרים (שורה)
+//        String columnPart = cords.replaceAll("[^A-Z]", ""); // הוצאת אותיות בלבד
+//        String rowPart = cords.replaceAll("[^0-9]", "");   // הוצאת מספרים בלבד
+//
+//        if (columnPart.isEmpty() || rowPart.isEmpty()) {
+//            throw new IllegalArgumentException("Invalid cell reference format: " + cords);
+//        }
+//
+//        int x = columnPart.charAt(0) - 'A'; // הפיכת אות לאינדקס עמודה (A -> 0, B -> 1)
+//        int y = Integer.parseInt(rowPart) - 1; // הפיכת המספר לאינדקס שורה
+//
+//        if (!isIn(x, y)) {
+//            throw new IndexOutOfBoundsException("Cell reference out of bounds: " + cords);
+//        }
+//
+//        return get(x, y); // החזרת התא המתאים
+//    }
 
         /////////////////////
         return ans;
+
     }
+
 
     @Override
     public int width() {
@@ -66,13 +91,29 @@ public class Ex2Sheet implements Sheet {
     public void eval() {
         int[][] dd = depth();
         // Add your code here
+        for (int i = 0; i < width(); i++) {
+            for (int j = 0; j < height(); j++) {
+                Cell cell = get(i, j);
+                if (cell.getData().startsWith("=")) {
+                    if (dd[i][j] == Ex2Utils.ERR) {
+                        cell.setType(Ex2Utils.ERR_CYCLE_FORM);
+                    } else {
+                        try {
+                            eval(i, j);
+                        } catch (Exception e) {
+                            cell.setType(Ex2Utils.ERR_FORM_FORMAT);
+                        }
+                    }
+                }
+            }
+        }
 
         // ///////////////////
     }
 
     @Override
     public boolean isIn(int xx, int yy) {
-        boolean ans = xx>=0 && yy>=0;
+        boolean ans = xx>=0 && xx<width() && yy>=0 && yy<height();
 //        if (xx > width())
 
         return ans;
@@ -105,12 +146,15 @@ public class Ex2Sheet implements Sheet {
     public String eval(int x, int y) {
         String ans = null;
         String exp = get(x, y).getData();
+        Cell cell = get(x,y);
         if(get(x,y)!=null) {ans = get(x,y).toString();}
 
         if (SCell.isForm(exp)){
-            double result = evaluateExpression(exp);
-            return String.valueOf(result);
-        }
+
+                double result = evaluateExpression(exp.substring(1),0,cell); // חישוב ביטוי
+                return String.valueOf(result);
+            }
+
         if (SCell.isNumber(exp)){
             double j =Double.parseDouble(exp);
             return String.valueOf(j);
@@ -120,11 +164,15 @@ public class Ex2Sheet implements Sheet {
         }
 
 
+        return Ex2Utils.ERR_FORM;
+    }
+//
 
+    public double evaluateExpression(String expression, int Recurse,Cell scell) {
 
-        return ans;
+        if (Recurse > width() * height()){
+            return Ex2Utils.ERR_CYCLE_FORM;
         }
-    public double evaluateExpression(String expression) {
         // הסרת רווחים מיותרים מהביטוי
         expression = expression.replaceAll(" ", "");
 
@@ -135,7 +183,48 @@ public class Ex2Sheet implements Sheet {
         int i = 0;
         while (i < expression.length()) {
             char current = expression.charAt(i);
+            if (Character.isLetter(current) && i + 1 < expression.length() &&
+                    Character.isDigit(expression.charAt(i + 1))) {
+                StringBuilder sb = new StringBuilder();
+                // קרא את שם התא
+                while (i < expression.length() &&
+                        (Character.isLetter(expression.charAt(i)) ||
+                                Character.isDigit(expression.charAt(i)))) {
+                    sb.append(expression.charAt(i));
+                    i++;
+                }
+                String cellRef = sb.toString();
+                // מצא את ערך התא
+                if (isValid(cellRef)) {
+                    Cell referencedCell = find(cellRef);
+                    if (referencedCell.getType() == 1){
+                        scell.setData(Ex2Utils.ERR_FORM);
+                        return 0;
+                    }
+                    if (referencedCell.getType() == 2){
+                        values.add(Double.parseDouble(referencedCell.getData()));
+                    }
+                    if (referencedCell.getType() == 3){
+                        values.add(evaluateExpression(cellRef,Recurse+1,referencedCell));
+
+                    }
+//                    if (referencedCell != null) {
+//                        String cellValue = referencedCell.getData();
+//                        if (cellValue.startsWith("=")) {
+//                            // אם התא מכיל נוסחה, חשב אותה רקורסיבית
+//                            double val = evaluateExpression(cellValue.substring(1));
+//                            values.add(val);
+//                        } else if (SCell.isNumber(cellValue)) {
+//                            values.add(Double.parseDouble(cellValue));
+//                        } else {
+//                            throw new IllegalArgumentException("Invalid cell reference: " + cellRef);
+//                        }
+//                    }
+                }
+                continue;
+            }
             if (Character.isLetter(current) && (i - 1 > 0 || !Character.isDigit(expression.charAt(i -1)) )){
+                //if (Character.isDigit(expression.charAt(i + 2));
                 String ops = "*/-+)";
                 int s = i;
                 int j = i;
@@ -145,12 +234,10 @@ public class Ex2Sheet implements Sheet {
                   i++;
 
                 }
-              String a = expression.substring(i, j+1);
-              if (isValid(a)){
-                  cell = evaluateExpression(find(a).getData());
-              }
-            }
+              String a = expression.substring(s, j+1);
 
+
+            }
 
 
             // אם זה מספר, נקרא את כולו
@@ -165,11 +252,10 @@ public class Ex2Sheet implements Sheet {
                 continue; // נמשיך ללולאה הבאה (כבר הגדלנו את i)
             }
 
-            // אם זה סוגריים פתוחים
             if (current == '(') {
                 operators.add(current);
             }
-            // אם זה סוגריים סגורים
+
             else if (current == ')') {
                 // בצע חישובים עד שנסגור את הסוגריים
                 while (!operators.isEmpty() && operators.get(operators.size() - 1) != '(') {
@@ -177,9 +263,9 @@ public class Ex2Sheet implements Sheet {
                 }
                 operators.remove(operators.size() - 1); // הסר את '('
             }
-            // אם זה אופרטור
+            // if its operator
             else if (isOperator(current)) {
-                // בצע חישובים עבור אופרטורים עם קדימות גבוהה יותר
+                // compute bt math order
                 while (!operators.isEmpty() &&
                         hasPrecedence(current, operators.get(operators.size() - 1))) {
                     processOperation(values, operators);
@@ -189,14 +275,23 @@ public class Ex2Sheet implements Sheet {
             i++;
         }
 
-        // בצע חישובים על כל מה שנותר
+        // comput what left
         while (!operators.isEmpty()) {
             processOperation(values, operators);
         }
 
-        // הערך האחרון ברשימה הוא התוצאה
+        // value is last
         return values.get(0);
     }
+
+    private boolean CellReference(String ref) {
+        if (ref == null || ref.length() < 2) return false;
+        char col = ref.charAt(0);
+        return Character.isLetter(col) &&
+                ref.substring(1).matches("\\d+") &&
+                col >= 'A' && col <= 'Z';
+    }
+
     public boolean isValid(String Val){
         for (int i= 0; i < this.table.length; i++){
             for (int j = 0; j < this.table[i].length; j++){
@@ -211,12 +306,27 @@ public class Ex2Sheet implements Sheet {
     }
 
     public Cell find(String s){
+
+//            if (!CellReference(s)){
+//                return null;
+//            }
+//
+//            char col = s.charAt(0);
+//            int row = Integer.parseInt(s.substring(1));
+//            int x = col - 'A';
+//
+//            if (isIn(x, row)) {
+//                return table[x][row];
+//            }
+//            return null;
+     if (isValid(s)){
         for (int i = 0; i < this.table.length; i++) {
             for (int j = 0; j < this.table[i].length; j++) {
                 SCell a = (SCell) this.table[i][j];
-                if(a.getName().equals(s)){
+                if (a.getName().equals(s)) {
                     return table[i][j];
                 }
+            }
 
             }
 
@@ -270,4 +380,5 @@ public class Ex2Sheet implements Sheet {
 
 
     }
+
 }

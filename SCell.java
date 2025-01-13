@@ -4,6 +4,7 @@ package ex2;
 public class SCell implements Cell {
     private String line;
     private int type;
+    private int order;
     private String CellName;
 
     public SCell(String s, String g) {
@@ -31,7 +32,8 @@ public class SCell implements Cell {
     @Override
 public void setData(String s) {
         line = s;
-        type= whichType(s);
+        setType(whichType(s));
+        //type= whichType(s);
     }
 
 
@@ -39,6 +41,7 @@ public void setData(String s) {
     public String getData() {
         return line;
     }
+
 
     @Override
     public int getType() {
@@ -89,6 +92,10 @@ public void setData(String s) {
         for (int i = 0; i < str.length(); i++) {
             String temp = String.valueOf(str.charAt(i));
             if (!regex.contains(temp) && !opertors.contains(temp) && !a.contains(temp)) {
+                if (Character.isLetter(str.charAt(i)) && i + 1 < str.length() && Character.isDigit(str.charAt(i +1))) {
+                    continue;
+                }
+
                 return false;
             }
 //
@@ -123,34 +130,41 @@ public void setData(String s) {
     }
 
     public static boolean IsText(String JustText) {
+        if(!isForm(JustText)|| !isNumber(JustText)) {
+            String letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHI";
+            String Numbers = "1234567890";
+            String Operators = "=*/+-().";
 
-        String letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHI";
-        String Numbers = "1234567890";
-        String Operators = "=*/+-().";
-
-        try {
-            for (int i = 0; i < JustText.length(); i++) {
-                String Temp = String.valueOf(JustText.charAt(i));
-                if (!letters.contains(Temp) && !Numbers.contains(Temp) && !Operators.contains(Temp)) {
-                    return false;
+            try {
+                for (int i = 0; i < JustText.length(); i++) {
+                    String Temp = String.valueOf(JustText.charAt(i));
+                    if (!letters.contains(Temp) && !Numbers.contains(Temp) && !Operators.contains(Temp)) {
+                        return false;
+                    }
+                    return true;
                 }
-                return true;
-            }
 
-        } catch (Exception e) {
-            return false;
+            } catch (Exception e) {
+                return false;
+            }
+            return true;
         }
-        return true;
+        return false;
     }
     private int whichType(String s) {
-        if (IsText(s)){
-            return 1;
-        }
+
+
         if (isNumber(s)){
             return 2;
         }
-        if (isForm(s)){
+        else if (isForm(s)){
+
             return 3;
+        }
+       else if (IsText(s)){
+
+
+            return 1;
         }
         return -2;
     }

@@ -41,15 +41,20 @@ public class SCellTests {
     public void testComputeFormValid() {
         SCell cell = new SCell("","A0");
         Ex2Sheet sheet = new Ex2Sheet();
-        assertEquals(5.0, sheet.evaluateExpression("=1+2*2"));
-        assertEquals(5.0, sheet.evaluateExpression("=((1+2)*2)-1"));
-        assertEquals(3.0, sheet.evaluateExpression("(1+2)/2+3-1.5"));
+        assertEquals(5.0, sheet.evaluateExpression("=1+2*2",0,cell),Ex2Utils.EPS2);
+        assertEquals(5.0, sheet.evaluateExpression("=((1+2)*2)-1",0,cell));
+        assertEquals(3.0, sheet.evaluateExpression("(1+2)/2+3-1.5",0,cell));
     }
 
     @Test
     public void testGetName(){
         SCell i = new SCell("","A56");
         assertEquals(i.getName(),"A56");
+    }
+    @Test
+    public void CellTest(){
+        SCell bcell = new SCell("=A0+2","A1");
+        assertEquals(Ex2Utils.FORM,bcell.getType());
     }
 
 }
